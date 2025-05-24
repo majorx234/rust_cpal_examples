@@ -12,5 +12,9 @@ path = "src/lib.rs"
 name  = "audio_device_info"
 path = "src/audio_device_info/bin/main.rs"
 
+[[bin]]
+name  = "audio_output"
+path = "src/audio_output/bin/main.rs"
+
 [dependencies]
 cpal = { version = "0.15.3" }
