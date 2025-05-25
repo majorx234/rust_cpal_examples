@@ -71,31 +71,39 @@ fn write_data<T: SizedSample + FromSample<f64>>(
     }
 }
 
+fn audio_output<T: SizedSample + FromSample<f64>>(device: Device, config: StreamConfig) {
+    std::thread::spawn(move || {
+        let sample_rate = 48000.0f32;
+        let mut sine_obj = SineSynth {
+            freq: 440.0f64,
+            phase: 0.0f64,
+            step: 0,
+        };
+        let mut next_value = move || sine_obj.sine_wave_step(sample_rate);
+        let channels: usize = 2;
+        let err_fn = |err| eprintln!("Error: {err} occured on stream");
+        let stream = device
+            .build_output_stream(
+                &config,
+                move |data: &mut [T], _: &cpal::OutputCallbackInfo| {
+                    write_data(data, channels, &mut next_value)
+                },
+                err_fn,
+                None,
+            )
+            .expect("build output stream failed");
+    });
+}
 fn main() {
     println!("starting audio output");
-    if let Ok((device, sampleformat)) = get_audio_device() {
-        let config = device.default_output_config().expect("config error").into();
+    if let Ok((device, sample_format)) = get_audio_device() {
+        let config = device.default_output_config().expect("config error");
         println!("ready to play");
-        std::thread::spawn(move || {
-            let sample_rate = 48000.0f32;
-            let mut sine_obj = SineSynth {
-                freq: 440.0f64,
-                phase: 0.0f64,
-                step: 0,
-            };
-            let mut next_value = move || sine_obj.sine_wave_step(sample_rate);
-            let channels: usize = 2;
-            let err_fn = |err| eprintln!("Error: {err} occured on stream");
-            let stream = device
-                .build_output_stream(
-                    &config,
-                    move |data: &mut [T], _: &cpal::OutputCallbackInfo| {
-                        write_data(data, channels, &mut next_value)
-                    },
-                    err_fn,
-                    None,
-                )
-                .expect("build output stream failed");
-        });
+        match sample_format {
+            SampleFormat::F32 => audio_output::<f32>(device, config.into()),
+            _ => {
+                eprintln!("sample format not supported yet")
+            }
+        }
     };
 }
