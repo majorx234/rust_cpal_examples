@@ -92,6 +92,10 @@ fn audio_output<T: SizedSample + FromSample<f64>>(device: Device, config: Stream
                 None,
             )
             .expect("build output stream failed");
+        let _ = stream.play();
+        loop {
+            std::thread::sleep(std::time::Duration::from_millis(1));
+        }
     });
 }
 fn main() {
@@ -104,6 +108,8 @@ fn main() {
             _ => {
                 eprintln!("sample format not supported yet")
             }
-        }
+        };
+        let duration = 5;
+        std::thread::sleep(std::time::Duration::from_secs(duration));
     };
 }
